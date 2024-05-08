@@ -4,3 +4,29 @@ author: "Léo Besançon & Larissa Geiser"
 date: '`r Sys.Date()`'
 output: word_document
 ---
+
+```{r}
+ ############################### package library ############################### 
+# install.packages("caret", dependencies =T) # chelou comme package, mais c'est ce que le prof utilise :/
+library(caret)
+library(ggplot2)
+
+```
+
+```{r}
+ ############################### import and inspect data ############################### 
+setwd('/Users/larissageiser/Documents/GitHub/M6-ML-miniproject') 
+# Lari : '/Users/larissageiser/Documents/GitHub/M6-ML-miniproject'
+data <- read.csv('sobar-72.csv')
+dim(data) ; head(data)
+```
+
+```{r}
+ ############################### 1st technique : asdf ############################### 
+
+```
+
+```{r}
+ ############################### 2nd technique : asdf ############################### 
+
+```
