@@ -1,0 +1,6 @@
+---
+title: "M6-Miniproject"
+author: "Léo Besançon & Larissa Geiser"
+date: '`r Sys.Date()`'
+output: word_document
+---
