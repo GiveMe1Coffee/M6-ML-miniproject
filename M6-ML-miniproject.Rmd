@@ -1,32 +1,89 @@
 ---
-title: "M6-Miniproject"
+title: "M6 : Machine Learning Miniproject"
 author: "Léo Besançon & Larissa Geiser"
 date: '`r Sys.Date()`'
 output: word_document
 ---
 
-```{r}
- ############################### package library ############################### 
-# install.packages("caret", dependencies =T) # chelou comme package, mais c'est ce que le prof utilise :/
-library(caret)
-library(ggplot2)
+# 1. Data loading and description
+
+```{r library}
+#################### LIBRARY 
+
+install.packages('caret', dependencies=TRUE)
+library(caret) #WTFFFF ÇA BEUGUEEEEE
 
 ```
 
-```{r}
- ############################### import and inspect data ############################### 
+```{r data import}
+#################### DATA IMPORTING AND DESCRIPTION
+
 setwd('/Users/larissageiser/Documents/GitHub/M6-ML-miniproject') 
 # Lari : '/Users/larissageiser/Documents/GitHub/M6-ML-miniproject'
 data <- read.csv('sobar-72.csv')
-dim(data) ; head(data)
+dim(data)
+head(data)
+```
+The data comes from 72 individuals. It consists of an evaluation of 19 behavioral attributes. The attributes are very broad, and range from sexual history to social support. The last column indicates if the person has cervical cancer or not.
+
+The goal is to predict the apparition of cervical cancer based off of these behavioral traits.
+
+# 2. 1st technique : kNN
+
+## 2.1. Data normalisation
+
+Because the traits are very broad and the scales are different, the values need to be normalized to ensure an accurate evaluation with the kNN algorithm.
+
+```{r normalisation}
+#################### DATA NORMALISATION
+
+summary(data) # very different from one variable to another
+
+data$ca_cervix <- factor(data$ca_cervix, labels = c('no cancer', 'cancer')) # binary integer values changed into factors
+
+dataZ <- as.data.frame(scale(data[,-20]))
+dataZ$ca_cervix <- data$ca_cervix
 ```
 
-```{r}
- ############################### 1st technique : asdf ############################### 
+## 2.2. Train and test sets
+Now that the data is normalized, we need to separate it into a training set and a test set. We will choose random individuals, while making sure that there is a somewhat equal partitioning of cancer/non cancer.
+
+```{r train and test sets}
+#################### TRAIN AND TEST SETS
+set.seed(123)
+
+n <- nrow(dataZ)
+sel <- sample(1:n, n/4) 
+sel <- sort(sel)
+data_train <- dataZ[-sel,]# 3/4 of the data for training
+data_test <- dataZ[sel,] # 1/4 of the data for testing
+
+table(data_train$ca_cervix) ; table(data_test$ca_cervix)
 
 ```
 
-```{r}
- ############################### 2nd technique : asdf ############################### 
+
+```{r 1st technique}
+#################### 1ST TECHNIQUE
+
+train_control <- trainControl(method="repeatedcv", 
+                              number=5, 
+                              repeats = 10)
+search_values <- expand.grid(k = 1:35)
+model_cv <- train(diagnosis ~ .,
+                  data=data_test,
+                  trControl=train_control,
+                  method="knn",
+                  tuneGrid=search_values)
+
+```
+
+
+# 3. 2nd technique : TODO
+
+```{r 2nd technique}
+#################### 2ND TECHNIQUE
+
+#TODO
 
 ```
