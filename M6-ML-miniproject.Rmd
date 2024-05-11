@@ -7,12 +7,17 @@ output: word_document
 
 # 1. Data loading and description
 
-```{r library}
+```{r library, echo=FALSE}
 #################### LIBRARY 
 
-install.packages('caret', dependencies=TRUE)
-library(caret) #WTFFFF ÇA BEUGUEEEEE
+#install.packages('rattle')
+library(psych)
+library(rattle)
+library(rpart)
+library(stats)
+library(umap)
 
+set.seed(123)
 ```
 
 ```{r data import}
@@ -20,70 +25,144 @@ library(caret) #WTFFFF ÇA BEUGUEEEEE
 
 setwd('/Users/larissageiser/Documents/GitHub/M6-ML-miniproject') 
 # Lari : '/Users/larissageiser/Documents/GitHub/M6-ML-miniproject'
-data <- read.csv('sobar-72.csv')
+data <- read.csv('ObesityDataSet_raw_and_data_sinthetic.csv')
 dim(data)
 head(data)
 ```
-The data comes from 72 individuals. It consists of an evaluation of 19 behavioral attributes. The attributes are very broad, and range from sexual history to social support. The last column indicates if the person has cervical cancer or not.
+The data comes from more than 2'000 individuals. It consists of an evaluation of 16 physical and behavioral attributes. The last column indicates the weight class of the individual.
 
-The goal is to predict the apparition of cervical cancer based off of these behavioral traits.
+## 1.1. Data harmonization
 
-# 2. 1st technique : kNN
+To be able to use this dataset with the different algorithms, we need to modify the variables encoded with characters into numbers.
 
-## 2.1. Data normalisation
+```{r data harmonization}
+#################### DATA HARMONIZATION
 
-Because the traits are very broad and the scales are different, the values need to be normalized to ensure an accurate evaluation with the kNN algorithm.
+# gender : 0 = female, 1 = male
+data$Gender[data$Gender == 'Female'] <- 0
+data$Gender[data$Gender == 'Male'] <- 1
+data$Gender <- as.numeric(data$Gender)
 
-```{r normalisation}
-#################### DATA NORMALISATION
+# family history with overweight
+data$family_history_with_overweight[data$family_history_with_overweight == 'no'] <- 0
+data$family_history_with_overweight[data$family_history_with_overweight == 'yes'] <- 1
+data$family_history_with_overweight <- as.numeric(data$family_history_with_overweight)
 
-summary(data) # very different from one variable to another
+# FAVC (frequency of highly caloric food)
+data$FAVC[data$FAVC == 'no'] <- 0
+data$FAVC[data$FAVC == 'yes'] <- 1
+data$FAVC <- as.numeric(data$FAVC)
 
-data$ca_cervix <- factor(data$ca_cervix, labels = c('no cancer', 'cancer')) # binary integer values changed into factors
+# CAEC (food between meals ?)
+data$CAEC[data$CAEC == 'no'] <- 0
+data$CAEC[data$CAEC == 'Sometimes'] <- 1
+data$CAEC[data$CAEC == 'Frequently'] <- 2
+data$CAEC[data$CAEC == 'Always'] <- 3
+data$CAEC <- as.numeric(data$CAEC)
 
-dataZ <- as.data.frame(scale(data[,-20]))
-dataZ$ca_cervix <- data$ca_cervix
+# smoke
+data$SMOKE[data$SMOKE == 'no'] <- 0
+data$SMOKE[data$SMOKE == 'yes'] <- 1
+data$SMOKE <- as.numeric(data$SMOKE)
+
+# SCC (do you monitor your calories ?)
+data$SCC[data$SCC == 'no'] <- 0
+data$SCC[data$SCC == 'yes'] <- 1
+data$SCC <- as.numeric(data$SMOKE)
+
+# CALC (alcohol consumption)
+data$CALC[data$CALC == 'no'] <- 0
+data$CALC[data$CALC == 'Sometimes'] <- 1
+data$CALC[data$CALC == 'Frequently'] <- 2
+data$CALC[data$CALC == 'Always'] <- 3
+data$CALC <- as.numeric(data$CALC)
+
+# MTRANS (mode of transportation)
+data$MTRANS <- as.factor(data$MTRANS)
+
+# NObeyesdad (obesity)
+data$NObeyesdad <- as.factor(data$NObeyesdad)
+colnames(data)[colnames(data) == 'NObeyesdad'] <- 'Obesity'
+
+`````````
+
+
+# 2. 1st technique : k-means clustering
+
+## 2.1. Data visualisation
+
+We use the ´psych´ package to visualize the data
+
+```{r k-means visualisation}
+#################### DATA VISUALISATION
+
+pairs.panels(data[1:16],
+            ellipses = F,
+            pch= 21,
+            bg = data$Obesity)
+
+```
+Visually, the best segregating variables are ´weight´ and ´height´
+
+
+## 2.2. K-means algorithm
+We use the k-means algorithm from the ´stats´ package. We verify if the clustering works with a confusion matrix. 
+
+```{r kmeans algorithm}
+#################### K-MEANS ALGORITHM
+
+dataKmeans <- data.frame(data$Weight, data$Height, data$Obesity) #selecting "best" segregating variables
+
+kmclust <- kmeans(dataKmeans[,1:2], 7) # 2 diagnoses = 2 clusters (could be guessed with sum of squares)
+
+# clutering plot of the results
+plot(dataKmeans[1:2], 
+     col=kmclust$cluster, 
+     pch=19)
+legend(165, 1.8, 
+       c("1","2", "3", "4", "5", "6", "7"),
+       pch=19, 
+       col=c(1:7))
+
+# confusion matrix
+table(label=data$Obesity,cluster=kmclust$cluster)
+
 ```
 
-## 2.2. Train and test sets
-Now that the data is normalized, we need to separate it into a training set and a test set. We will choose random individuals, while making sure that there is a somewhat equal partitioning of cancer/non cancer.
 
-```{r train and test sets}
+## autre technique : UMAP ??
+
+```{r UMAP}
+#################### UMAP
+
+data.umap <- umap(data[1:15], random_state = 0)
+
+plot(data.umap$layout, pch=19, col=data$Obesity)
+
+```
+
+
+# 3. 2nd technique : Decision tree
+
+## 3.1. separate train and test sets
+
+```{r decision tree sets}
 #################### TRAIN AND TEST SETS
-set.seed(123)
 
-n <- nrow(dataZ)
-sel <- sample(1:n, n/4) 
-sel <- sort(sel)
-data_train <- dataZ[-sel,]# 3/4 of the data for training
-data_test <- dataZ[sel,] # 1/4 of the data for testing
+n <- nrow(data)
+sel <- sort(sample.int(n, n/4))
+data.train <- data[-sel,]
+data.test <- data[sel,]
 
-table(data_train$ca_cervix) ; table(data_test$ca_cervix)
+```
+
+```{r decision tree algorithm}
+#################### DECISION TREE ALGORITHM
+
+h1 <- rpart(Obesity ~ . , data = data.train, method ='class', cp=0, xval=500)
+
+fancyRpartPlot(h1, caption = NULL, type = 1)
 
 ```
 
 
-```{r 1st technique}
-#################### 1ST TECHNIQUE
-
-train_control <- trainControl(method="repeatedcv", 
-                              number=5, 
-                              repeats = 10)
-search_values <- expand.grid(k = 1:35)
-model_cv <- train(diagnosis ~ .,
-                  data=data_test,
-                  trControl=train_control,
-                  method="knn",
-                  tuneGrid=search_values)
-
-```
-
-
-# 3. 2nd technique : TODO
-
-```{r 2nd technique}
-#################### 2ND TECHNIQUE
-
-#TODO
-
-```
