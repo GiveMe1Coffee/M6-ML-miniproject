@@ -11,10 +11,13 @@ output: word_document
 #################### LIBRARY 
 
 #install.packages('rattle')
+library(dplyr)
+library(ggplot2)
 library(psych)
 library(rattle)
 library(rpart)
 library(stats)
+library(tidyr)
 library(umap)
 
 set.seed(123)
@@ -27,6 +30,7 @@ setwd('/Users/larissageiser/Documents/GitHub/M6-ML-miniproject')
 # Lari : '/Users/larissageiser/Documents/GitHub/M6-ML-miniproject'
 data <- read.csv('ObesityDataSet_raw_and_data_sinthetic.csv')
 dim(data)
+sum(is.na(data))
 head(data)
 ```
 The data comes from more than 2'000 individuals. It consists of an evaluation of 16 physical and behavioral attributes. The last column indicates the weight class of the individual.
@@ -53,7 +57,7 @@ data$FAVC[data$FAVC == 'no'] <- 0
 data$FAVC[data$FAVC == 'yes'] <- 1
 data$FAVC <- as.numeric(data$FAVC)
 
-# CAEC (food between meals ?)
+# CAEC (snacking between meals)
 data$CAEC[data$CAEC == 'no'] <- 0
 data$CAEC[data$CAEC == 'Sometimes'] <- 1
 data$CAEC[data$CAEC == 'Frequently'] <- 2
@@ -65,7 +69,7 @@ data$SMOKE[data$SMOKE == 'no'] <- 0
 data$SMOKE[data$SMOKE == 'yes'] <- 1
 data$SMOKE <- as.numeric(data$SMOKE)
 
-# SCC (do you monitor your calories ?)
+# SCC (calories monitoring)
 data$SCC[data$SCC == 'no'] <- 0
 data$SCC[data$SCC == 'yes'] <- 1
 data$SCC <- as.numeric(data$SMOKE)
@@ -78,13 +82,16 @@ data$CALC[data$CALC == 'Always'] <- 3
 data$CALC <- as.numeric(data$CALC)
 
 # MTRANS (mode of transportation)
-data$MTRANS <- as.factor(data$MTRANS)
+data$MTRANS <- as.factor(data$MTRANS) # better to encode with numbers ? i don't think so
 
 # NObeyesdad (obesity)
 data$NObeyesdad <- as.factor(data$NObeyesdad)
 colnames(data)[colnames(data) == 'NObeyesdad'] <- 'Obesity'
 
-`````````
+# results
+head(data)
+
+```
 
 
 # 2. 1st technique : k-means clustering
@@ -111,21 +118,29 @@ We use the k-means algorithm from the ´stats´ package. We verify if the cluste
 ```{r kmeans algorithm}
 #################### K-MEANS ALGORITHM
 
-dataKmeans <- data.frame(data$Weight, data$Height, data$Obesity) #selecting "best" segregating variables
-
-kmclust <- kmeans(dataKmeans[,1:2], 7) # 2 diagnoses = 2 clusters (could be guessed with sum of squares)
-
-# clutering plot of the results
+datakmeans <- data.frame(data$Weight, data$Height, data$Obesity)
+centers <- kmeans(datakmeans[1:2], 7, nstart=10)$centers
+centers <- sort(centers)
+# call kmeans again but this time passing the centers calculated in the previous step
+clusteridx <- kmeans(data[,3:4], centers)
+print(clusteridx)
+kmeans()
+# plot of the results
 plot(dataKmeans[1:2], 
      col=kmclust$cluster, 
      pch=19)
-legend(165, 1.8, 
+legend(1.45, 167, 
        c("1","2", "3", "4", "5", "6", "7"),
        pch=19, 
        col=c(1:7))
 
+```
+```{r kmeans accuracy}
+#################### K-MEANS ACCURACY
+
 # confusion matrix
-table(label=data$Obesity,cluster=kmclust$cluster)
+cm <- table(label=data$Obesity,cluster=kmclust$cluster)
+cm ; cat( sum(diag(cm)) / sum(cm) )
 
 ```
 
@@ -159,10 +174,13 @@ data.test <- data[sel,]
 ```{r decision tree algorithm}
 #################### DECISION TREE ALGORITHM
 
-h1 <- rpart(Obesity ~ . , data = data.train, method ='class', cp=0, xval=500)
+h <- rpart(Obesity ~ . , data = data.train, method ='class', cp=0, xval=500)
 
-fancyRpartPlot(h1, caption = NULL, type = 1)
+fancyRpartPlot(h, caption = NULL, type = 1)
 
 ```
 
+```{r}
+# TODO : truncate tree
+```
 
