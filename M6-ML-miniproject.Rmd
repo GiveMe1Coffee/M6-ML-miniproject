@@ -119,40 +119,31 @@ We use the k-means algorithm from the ´stats´ package. We verify if the cluste
 #################### K-MEANS ALGORITHM
 
 datakmeans <- data.frame(data$Weight, data$Height, data$Obesity)
-centers <- kmeans(datakmeans[1:2], 7, nstart=10)$centers
-centers <- sort(centers)
+
 # call kmeans again but this time passing the centers calculated in the previous step
-clusteridx <- kmeans(data[,3:4], centers)
-print(clusteridx)
-kmeans()
+km <- kmeans(datakmeans[,1:2], 7)
+
 # plot of the results
-plot(dataKmeans[1:2], 
-     col=kmclust$cluster, 
+plot(datakmeans[1:2], 
+     col=km$cluster, 
      pch=19)
-legend(1.45, 167, 
+legend(165, 1.8, 
        c("1","2", "3", "4", "5", "6", "7"),
        pch=19, 
        col=c(1:7))
 
 ```
+
+
 ```{r kmeans accuracy}
 #################### K-MEANS ACCURACY
 
+# re-order kmeans clusters according to mean weight
+
+
 # confusion matrix
-cm <- table(label=data$Obesity,cluster=kmclust$cluster)
+cm <- table(label=data$Obesity, cluster=km$cluster)
 cm ; cat( sum(diag(cm)) / sum(cm) )
-
-```
-
-
-## autre technique : UMAP ??
-
-```{r UMAP}
-#################### UMAP
-
-data.umap <- umap(data[1:15], random_state = 0)
-
-plot(data.umap$layout, pch=19, col=data$Obesity)
 
 ```
 
@@ -180,7 +171,26 @@ fancyRpartPlot(h, caption = NULL, type = 1)
 
 ```
 
-```{r}
-# TODO : truncate tree
+```{r truncate tree}
+#################### DECISION TREE PRUNING
+
+plotcp(h)
+
+h_pruned <- prune(h, cp=0.03)
+
+fancyRpartPlot(h_pruned, caption=NULL, type=2)
+```
+
+```{r tree evaluation}
+#################### DECISION TREE EVALUATION
+
+obesity_pred <- predict(h_pruned, data.test, type= 'class')
+
+conf_table <- table(true=data.test$Obesity, predicted = obesity_pred)
+
+n <- sum(conf_table)
+error = (n - sum(diag(conf_table)))/n
+
+cat(sprintf("The relative prediction error is %4.1f%%",error*100))
 ```
 
