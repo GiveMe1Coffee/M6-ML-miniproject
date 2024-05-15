@@ -24,7 +24,7 @@ set.seed(123)
 ```
 
 ```{r data import}
-#################### DATA IMPORTING AND DESCRIPTION
+#################### DATA IMPORTING AND DESCRIPTION for Larissa
 
 setwd('/Users/larissageiser/Documents/GitHub/M6-ML-miniproject') 
 # Lari : '/Users/larissageiser/Documents/GitHub/M6-ML-miniproject'
@@ -33,6 +33,17 @@ dim(data)
 sum(is.na(data))
 head(data)
 ```
+```{r}
+#################### DATA IMPORTING AND DESCRIPTION for Leo
+
+setwd('C:/Users/besan/OneDrive/Bureau/Module 6/Machine learning') 
+# Lari : '/Users/larissageiser/Documents/GitHub/M6-ML-miniproject'
+data <- read.csv('ObesityDataSet_raw_and_data_sinthetic.csv')
+dim(data)
+sum(is.na(data))
+head(data)
+```
+
 The data comes from more than 2'000 individuals. It consists of an evaluation of 16 physical and behavioral attributes. The last column indicates the weight class of the individual.
 
 ## 1.1. Data harmonization
@@ -139,10 +150,19 @@ legend(165, 1.8,
 #################### K-MEANS ACCURACY
 
 # re-order kmeans clusters according to mean weight
-
+ordered_center <- order(km$centers[,1])
+ordered_labels <- match(km$cluster,ordered_center)
+# plot of the results
+plot(datakmeans[1:2], 
+     col=ordered_labels, 
+     pch=19)
+legend(165, 1.8, 
+       c("1","2", "3", "4", "5", "6", "7"),
+       pch=19, 
+       col=c(1:7))
 
 # confusion matrix
-cm <- table(label=data$Obesity, cluster=km$cluster)
+cm <- table(label=data$Obesity, cluster=ordered_labels)
 cm ; cat( sum(diag(cm)) / sum(cm) )
 
 ```
@@ -194,8 +214,6 @@ error = (n - sum(diag(conf_table)))/n
 cat(sprintf("The relative prediction error is %4.1f%%",error*100))
 ```
 
-```{r}
-print("coucou")
-```
+
 
 
