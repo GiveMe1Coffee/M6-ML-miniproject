@@ -194,3 +194,8 @@ error = (n - sum(diag(conf_table)))/n
 cat(sprintf("The relative prediction error is %4.1f%%",error*100))
 ```
 
+```{r}
+print("coucou")
+```
+
+
