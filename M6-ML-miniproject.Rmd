@@ -7,10 +7,10 @@ output: word_document
 
 # 1. Data loading and description
 
-```{r library, echo=FALSE}
+```{r library, include=FALSE}
 #################### LIBRARY 
 
-#install.packages('rattle')
+#install.packages('')
 library(dplyr)
 library(ggplot2)
 library(psych)
@@ -23,24 +23,20 @@ library(umap)
 set.seed(123)
 ```
 
-```{r data import}
-#################### DATA IMPORTING AND DESCRIPTION for Larissa
-
+```{r setup lari, echo=FALSE}
+#################### DATA IMPORTING for Larissa
 setwd('/Users/larissageiser/Documents/GitHub/M6-ML-miniproject') 
-# Lari : '/Users/larissageiser/Documents/GitHub/M6-ML-miniproject'
-data <- read.csv('ObesityDataSet_raw_and_data_sinthetic.csv')
-dim(data)
-sum(is.na(data))
-head(data)
 ```
-```{r}
-#################### DATA IMPORTING AND DESCRIPTION for Leo
 
-setwd('C:/Users/besan/OneDrive/Bureau/Module 6/Machine learning') 
-# Lari : '/Users/larissageiser/Documents/GitHub/M6-ML-miniproject'
+```{r setup leo, echo = FALSE}
+#################### DATA IMPORTING for Leo
+#setwd('C:/Users/besan/OneDrive/Bureau/Module 6/Machine learning') 
+```
+
+```{r read data}
 data <- read.csv('ObesityDataSet_raw_and_data_sinthetic.csv')
 dim(data)
-sum(is.na(data))
+sum(is.na(data)) #no missing value
 head(data)
 ```
 
@@ -107,6 +103,8 @@ head(data)
 
 # 2. 1st technique : k-means clustering
 
+We think that K-means clustering is a good technique for this dataset. We already know that we have 7 categories for obesity, so it is interesting to see if the technique is able to separate the data into the right clusters.
+
 ## 2.1. Data visualisation
 
 We use the ´psych´ package to visualize the data
@@ -120,11 +118,11 @@ pairs.panels(data[1:16],
             bg = data$Obesity)
 
 ```
-Visually, the best segregating variables are ´weight´ and ´height´
+The best segregating variables seem to be ´weight´ and ´height´
 
 
 ## 2.2. K-means algorithm
-We use the k-means algorithm from the ´stats´ package. We verify if the clustering works with a confusion matrix. 
+We use the k-means algorithm from the ´stats´ package.
 
 ```{r kmeans algorithm}
 #################### K-MEANS ALGORITHM
@@ -145,9 +143,10 @@ legend(165, 1.8,
 
 ```
 
+The clusters aren't in the right order. We modify the cluster "names" to then measure accuracy :
 
-```{r kmeans accuracy}
-#################### K-MEANS ACCURACY
+```{r kmeans cluster ordering}
+#################### K-MEANS CLUSTER ORDERING
 
 # re-order kmeans clusters according to mean weight
 ordered_center <- order(km$centers[,1])
@@ -161,16 +160,21 @@ legend(165, 1.8,
        pch=19, 
        col=c(1:7))
 
-# confusion matrix
-cm <- table(label=data$Obesity, cluster=ordered_labels)
-cm ; cat( sum(diag(cm)) / sum(cm) )
-
 ```
 
+The clusers are now in the right order. We measure the accuracy of the technique with a confusion matrix :
+
+```{r kmeans confusion matrix}
+#################### K-MEANS CONFUSION MATRIX
+cm <- table(label=data$Obesity, cluster=ordered_labels)
+cm ; cat( sum(diag(cm)) / sum(cm) )
+```
+
+The technique is not very accurate, only 21% of the clustering is right.
 
 # 3. 2nd technique : Decision tree
 
-## 3.1. separate train and test sets
+## 3.1. Separate train and test sets
 
 ```{r decision tree sets}
 #################### TRAIN AND TEST SETS
@@ -191,6 +195,8 @@ fancyRpartPlot(h, caption = NULL, type = 1)
 
 ```
 
+The tree is too big, we need to truncate it. We adjusted the cp value until we had 7 categories.
+
 ```{r truncate tree}
 #################### DECISION TREE PRUNING
 
@@ -200,6 +206,8 @@ h_pruned <- prune(h, cp=0.03)
 
 fancyRpartPlot(h_pruned, caption=NULL, type=2)
 ```
+
+The second tree looks better, and we have indeed our 7 categories. We can now measure its accuracy :
 
 ```{r tree evaluation}
 #################### DECISION TREE EVALUATION
@@ -214,6 +222,4 @@ error = (n - sum(diag(conf_table)))/n
 cat(sprintf("The relative prediction error is %4.1f%%",error*100))
 ```
 
-
-
-
+For such a dataset and mini-project, an error of ´{r} error*100´% is not that bad.
